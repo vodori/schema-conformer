@@ -3,7 +3,8 @@
             [schema-conformer.core :refer :all]
             [clj-time.core :as time]
             [schema.core :as s]
-            [schema-conformer.transforms :as t])
+            [schema-conformer.transforms :as t]
+            [schema.experimental.abstract-map :as sam])
   (:import (java.time Instant)
            (org.joda.time DateTime)))
 
@@ -21,6 +22,15 @@
        (doseq [[schema# expected# provided#] [~@(map vec (partition 3 triples))]]
          (is (= expected# (conform schema# opt# provided#)))))))
 
+(s/defschema Animal
+  (sam/abstract-map-schema
+    :type
+    {:friends #{s/Keyword}}))
+
+(sam/extend-schema Giraffe Animal
+  [:giraffe]
+  {:numberOfLegs (default s/Int 4)})
+
 (deftest conform-test
   (verify-option :align-map-keys
                  {:required (s/maybe s/Str)} {:required nil} {}
@@ -28,6 +38,12 @@
 
   (testing "constrained->nested"
     (verify (s/constrained {:test s/Bool} not-empty) {:test true} {:test "true"}))
+
+  (testing "enums"
+    (verify (s/enum true false) false "false"))
+
+  (testing "abstract schemas"
+    (verify Giraffe {:friends #{} :numberOfLegs 4 :type :giraffe} {:type :giraffe}))
 
   (verify-option :datetime->string s/Str "1970-01-01T00:00:00.000Z" (time/epoch))
   (verify-option :instant->string s/Str "1970-01-01T00:00:00Z" (Instant/EPOCH))

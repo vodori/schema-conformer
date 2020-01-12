@@ -12,6 +12,7 @@
 (def HexStringPattern #"^[0-9a-fA-F]$")
 (def EmailPattern (Pattern/compile "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]+$" Pattern/CASE_INSENSITIVE))
 (def HexPattern #"^[0-9a-fA-F]*$")
+(def JWTPattern #"^([a-zA-Z0-9+/]+)\.([a-zA-Z0-9+/]+)\.([a-zA-Z0-9+/]+)$")
 (def Base64Pattern #"^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
 (def IPV4AddressPattern #"^([01]?\d\d?|2[0-4]\d|25[0-5])\.([01]?\d\d?|2[0-4]\d|25[0-5])\.([01]?\d\d?|2[0-4]\d|25[0-5])\.([01]?\d\d?|2[0-4]\d|25[0-5])$")
 (def DomainNamePattern #"^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,6}$")

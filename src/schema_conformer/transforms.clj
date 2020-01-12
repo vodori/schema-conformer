@@ -40,11 +40,8 @@
 (defn uuid-schema? [s]
   (or (= UUID s) (= s/Uuid s)))
 
-(let [bool-enum (s/enum true false)]
-  (defn boolean-schema? [s]
-    (or (= Boolean s)
-        (= s/Bool s)
-        (= bool-enum s))))
+(defn boolean-schema? [s]
+  (or (= Boolean s) (= s/Bool s)))
 
 (defn date-time? [v]
   (date-time-schema? (class v)))
@@ -54,9 +51,6 @@
 
 (defn object-id? [v]
   (object-id-schema? (class v)))
-
-(defn uuid->string [s]
-  (str s))
 
 (defn string->uuid [s]
   (UUID/fromString s))
@@ -69,9 +63,6 @@
 
 (defn number->datetime [s]
   (construct "org.joda.time.DateTime" s))
-
-(defn instant->string [s]
-  (str s))
 
 (defn lazy [sym]
   (delay (var-get (requiring-resolve sym))))
@@ -163,11 +154,11 @@
       (remove-optional-nil-keys optional-keys))))
 
 (defrecord Default [schema default]
-  schema.core/Schema
+  s/Schema
   (spec [this]
     (leaf/leaf-spec spec/+no-precondition+))
   (explain [this]
-    (list 'default (schema.core/explain schema) default)))
+    (list 'default (s/explain schema) default)))
 
 (defn default? [s]
   (instance? Default s))
@@ -191,11 +182,10 @@
     (conform inner (if (some? x) x (:default schema)))))
 
 (defn schema-record? [s]
-  (and (record? s)
-       (let [clazz (.getName (class s))]
-         (or (strings/starts-with? clazz "schema.core.")
-             (strings/starts-with? clazz "schema.experimental.")
-             (strings/starts-with? clazz "schema_conformer.transforms.")))))
+  (let [clazz (.getName (class s))]
+    (or (strings/starts-with? clazz "schema.core.")
+        (strings/starts-with? clazz "schema.experimental.")
+        (strings/starts-with? clazz "schema_conformer.transforms."))))
 
 (defn map-schema? [s]
   (and (map? s) (not (schema-record? s))))
@@ -210,18 +200,22 @@
   (conform (:schema schema) x))
 
 (defn either [schema x]
-  (or (->> (get schema :schemas)
-           (map (fn [s] (conform s x)))
-           (remove su/error?)
-           (first))
-      x))
+  (if-some [converted
+            (->> (get schema :schemas)
+                 (map (fn [s] (conform s x)))
+                 (remove su/error?)
+                 (first))]
+    converted
+    x))
 
 (defn enumeration [schema x]
-  (or (->> (get schema :vs)
-           (map (fn [s] (conform (class s) x)))
-           (remove su/error?)
-           (first))
-      x))
+  (if-some [converted
+            (->> (get schema :vs)
+                 (map (fn [s] (conform (class s) x)))
+                 (remove su/error?)
+                 (first))]
+    converted
+    x))
 
 (defn nil->abstract-schema [{:keys [dispatch-key] :as schema} x]
   (conform schema {dispatch-key nil}))
@@ -238,9 +232,9 @@
   [[string-schema?
     [{:key :keyword->string :default true :value? keyword? :transform (lift name)}
      {:key :symbol->string :default true :value? symbol? :transform (lift name)}
-     {:key :uuid->string :default true :value? uuid? :transform (lift uuid->string)}
+     {:key :uuid->string :default true :value? uuid? :transform (lift str)}
      {:key :datetime->string :default true :value? date-time? :transform (lift datetime->string)}
-     {:key :instant->string :default true :value? instant? :transform (lift instant->string)}
+     {:key :instant->string :default true :value? instant? :transform (lift str)}
      {:key :object-id->string :default true :value? object-id? :transform (lift object-id->string)}]]
    [keyword-schema?
     [{:key :string->keyword :default true :value? string? :transform (lift keyword)}
