@@ -3,7 +3,8 @@
             [clojure.set :as sets]
             [schema.core :as s]
             [schema.utils :as su]
-            [schema.coerce :as sc])
+            [schema.coerce :as sc]
+            [schema.experimental.abstract-map :as sam])
   (:import (clojure.lang Reflector Keyword Symbol)
            (schema.core Constrained OptionalKey RequiredKey EnumSchema Either)
            (java.util UUID)
