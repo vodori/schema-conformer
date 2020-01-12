@@ -1,4 +1,4 @@
-(defproject com.vodori/schema-conformer "0.1.2-SNAPSHOT"
+(defproject com.vodori/schema-conformer "0.1.2"
 
   :description
   "A library for configurable conforming of data according to prismatic schemas."
