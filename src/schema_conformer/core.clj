@@ -5,13 +5,20 @@
             [schema-conformer.transforms :as t]
             [schema.core :as s]))
 
+(defn matcher
+  "A schema matcher."
+  ([schema]
+   (t/schema-matcher schema))
+  ([schema options]
+   (t/schema-matcher schema options)))
+
 (defn conformer
   "Creates a function that will conform data to the provided schema."
   ([schema]
-   (sc/coercer schema (memoize t/schema-matcher)))
+   (sc/coercer schema (memoize matcher)))
   ([schema options]
    (let [opts (merge t/DEFAULTS options)]
-     (sc/coercer schema (memoize #(t/schema-matcher % opts))))))
+     (sc/coercer schema (memoize #(matcher % opts))))))
 
 (defn conform
   "Conforms the given data to the given schema."
