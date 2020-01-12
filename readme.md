@@ -42,6 +42,7 @@ by passing an options map. Available options are:
 {:align-map-keys      true,
  :constrained->nested true,
  :datetime->string    true,
+ :default->nested     true,
  :either->nested      true,
  :enum->nested        true,
  :instant->string     true,
