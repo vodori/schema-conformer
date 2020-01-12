@@ -51,3 +51,7 @@
     (is (not (conforms? merged {:a "test" :b "cat"})))
     (is (not (conforms? merged {:a "rawr" :b "tset"})))
     (is (conforms? merged {:a "test" :b "tset"}))))
+
+(deftest default-test
+  (let [schema {:a (default s/Keyword :bingo)}]
+    (is (= {:a :bingo} (conform schema {})))))

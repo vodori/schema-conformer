@@ -4,7 +4,9 @@
             [schema.core :as s]
             [schema.utils :as su]
             [schema.coerce :as sc]
-            [schema.experimental.abstract-map :as sam])
+            [schema.experimental.abstract-map :as sam]
+            [schema.spec.leaf :as leaf]
+            [schema.spec.core :as spec])
   (:import (clojure.lang Reflector Keyword Symbol)
            (schema.core Constrained OptionalKey RequiredKey EnumSchema Either)
            (java.util UUID)
@@ -38,10 +40,11 @@
 (defn uuid-schema? [s]
   (or (= UUID s) (= s/Uuid s)))
 
-(defn boolean-schema? [s]
-  (or (= Boolean s)
-      (= s/Bool s)
-      (= (s/enum true false) s)))
+(let [bool-enum (s/enum true false)]
+  (defn boolean-schema? [s]
+    (or (= Boolean s)
+        (= s/Bool s)
+        (= bool-enum s))))
 
 (defn date-time? [v]
   (date-time-schema? (class v)))
@@ -93,12 +96,6 @@
 (defn keyword-schema? [s]
   (or (= Keyword s) (= s/Keyword s)))
 
-(defn set-schema? [s]
-  (set? s))
-
-(defn vector-schema? [s]
-  (vector? s))
-
 (defn constrained-schema? [s]
   (instance? Constrained s))
 
@@ -110,14 +107,6 @@
 
 (defn extension? [s]
   (instance? SchemaExtension s))
-
-(defn schema-record? [s]
-  (let [clazz (.getName (class s))]
-    (or (strings/starts-with? clazz "schema.core.")
-        (strings/starts-with? clazz "schema.experimental."))))
-
-(defn map-schema? [s]
-  (and (map? s) (not (schema-record? s))))
 
 (defn object-id->string [o]
   (.toHexString o))
@@ -173,6 +162,16 @@
       :always
       (remove-optional-nil-keys optional-keys))))
 
+(defrecord Default [schema default]
+  schema.core/Schema
+  (spec [this]
+    (leaf/leaf-spec spec/+no-precondition+))
+  (explain [this]
+    (list 'default (schema.core/explain schema) default)))
+
+(defn default? [s]
+  (instance? Default s))
+
 (defmacro lift [transform]
   `(fn [_# v#] (~transform v#)))
 
@@ -186,6 +185,20 @@
   ({"true" true "false" false}
    (strings/lower-case s)
    s))
+
+(defn default->nested [schema x]
+  (let [inner (:schema schema)]
+    (conform inner (if (some? x) x (:default schema)))))
+
+(defn schema-record? [s]
+  (and (record? s)
+       (let [clazz (.getName (class s))]
+         (or (strings/starts-with? clazz "schema.core.")
+             (strings/starts-with? clazz "schema.experimental.")
+             (strings/starts-with? clazz "schema_conformer.transforms.")))))
+
+(defn map-schema? [s]
+  (and (map? s) (not (schema-record? s))))
 
 (defn number->boolean [x]
   ({1 true 0 false} (int x) x))
@@ -229,30 +242,37 @@
      {:key :datetime->string :default true :value? date-time? :transform (lift datetime->string)}
      {:key :instant->string :default true :value? instant? :transform (lift instant->string)}
      {:key :object-id->string :default true :value? object-id? :transform (lift object-id->string)}]]
+   [keyword-schema?
+    [{:key :string->keyword :default true :value? string? :transform (lift keyword)}
+     {:key :symbol->keyword :default true :value? symbol? :transform (lift keyword)}]]
    [enum-schema?
     [{:key :enum->nested :default true :value? any? :transform enumeration}]]
    [either-schema?
     [{:key :either->nested :default true :value? any? :transform either}]]
-   [abstract?
-    [{:key :nil->abstract :default true :value? nil? :transform nil->abstract-schema}]]
-   [extension?
-    [{:key :nil->extension :default true :value? nil? :transform nil->extension}]]
-   [boolean-schema?
-    [{:key :string->boolean :default true :value? string? :transform (lift string->boolean)}
-     {:key :number->boolean :default true :value? integer? :transform (lift number->boolean)}]]
-   [keyword-schema?
-    [{:key :string->keyword :default true :value? string? :transform (lift keyword)}
-     {:key :symbol->keyword :default true :value? symbol? :transform (lift keyword)}]]
-   [uuid-schema?
-    [{:key :string->uuid :default true :value? string? :transform (lift string->uuid)}]]
-   [set-schema?
+   [set?
     [{:key :list->set :default true :value? list? :transform (lift set)}
      {:key :vector->set :default true :value? vector? :transform (lift set)}
      {:key :nil->set :default true :value? nil? :transform (defaulting #{})}]]
-   [vector-schema?
+   [vector?
     [{:key :set->vector :default true :value? set? :transform (lift vec)}
      {:key :list->vector :default true :value? list? :transform (lift vec)}
      {:key :nil->vector :default true :value? nil? :transform (defaulting [])}]]
+   [map-schema?
+    [{:key :nil->map :default true :value? nil? :transform (fn [schema _] (conform schema {}))}
+     {:key :align-map-keys :default true :value? map? :transform align-map}]]
+   [boolean-schema?
+    [{:key :string->boolean :default true :value? string? :transform (lift string->boolean)}
+     {:key :number->boolean :default true :value? integer? :transform (lift number->boolean)}]]
+   [constrained-schema?
+    [{:key :constrained->nested :default true :value? any? :transform constrained}]]
+   [abstract?
+    [{:key :nil->abstract :default true :value? nil? :transform nil->abstract-schema}]]
+   [default?
+    [{:key :default->nested :default true :value? any? :transform default->nested}]]
+   [extension?
+    [{:key :nil->extension :default true :value? nil? :transform nil->extension}]]
+   [uuid-schema?
+    [{:key :string->uuid :default true :value? string? :transform (lift string->uuid)}]]
    [date-time-schema?
     [{:key :string->datetime :default true :value? string? :transform (lift string->datetime)}
      {:key :integer->datetime :default true :value? integer? :transform (lift number->datetime)}]]
@@ -263,12 +283,7 @@
     [{:key :string->object-id :default true :value? string? :transform (lift string->object-id)}]]
    [symbol-schema?
     [{:key :keyword->symbol :default true :value? keyword? :transform (lift symbol)}
-     {:key :string->symbol :default true :value? string? :transform (lift symbol)}]]
-   [constrained-schema?
-    [{:key :constrained->nested :default true :value? any? :transform constrained}]]
-   [map-schema?
-    [{:key :nil->map :default true :value? nil? :transform (fn [schema _] (conform schema {}))}
-     {:key :align-map-keys :default true :value? map? :transform align-map}]]])
+     {:key :string->symbol :default true :value? string? :transform (lift symbol)}]]])
 
 (def DEFAULTS
   (into {} (for [[_ transforms] MAPPINGS

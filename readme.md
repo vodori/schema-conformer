@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/vodori/schema-conformer.svg?branch=master)](https://travis-ci.org/vodori/schema-conformer) [![Maven metadata URL](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/com/vodori/schema-conformer/maven-metadata.xml.svg)](https://mvnrepository.com/artifact/com.vodori/schema-conformer)
+[![Build Status](https://travis-ci.com/vodori/schema-conformer.svg?branch=master)](https://travis-ci.com/vodori/schema-conformer) [![Maven metadata URL](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/com/vodori/schema-conformer/maven-metadata.xml.svg)](https://mvnrepository.com/artifact/com.vodori/schema-conformer)
 
 
 ### Problem
@@ -18,8 +18,17 @@ aren't enough.
 
 ```clojure
 (require '[schema-conformer.core :refer :all])
+
 (conform {:test #{s/Str}} {:test [:example]})
 => {:test #{"example"}}
+
+
+; there's also a default schema type that you can use to 
+; set default values during the conforming process
+
+(conform {:test (default s/Keyword :bingo)} {})
+=> {:test :bingo}
+
 ```
 
 ---
@@ -76,6 +85,12 @@ If mongodb is on your classpath:
 
 - Converting org.bson.types.ObjectId to strings
 - Converting strings to org.bson.types.ObjectId
+
+___
+
+### Alternatives
+
+- [Malli](https://github.com/metosin/malli) is a nicer data-driven alternative to prismatic/schema.
 
 ___
 
