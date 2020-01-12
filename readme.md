@@ -11,7 +11,7 @@ aren't enough.
 ### Installation 
 
 ```clojure
-[com.vodori/schema-conformer "0.1.0"]
+[com.vodori/schema-conformer "0.1.1"]
 ```
 
 ### Usage
