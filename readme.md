@@ -5,8 +5,8 @@
 
 We're users of prismatic/schema. Schema is expressive and useful but we always 
 find ourselves using custom matchers in order to be liberal in what we accept 
-and conservative in what we send. The basic matchers built-in to prismatic/schema 
-aren't enough.
+and conservative in what we send. The basic matchers bundled in Schema aren't 
+enough.
 
 ### Installation 
 
@@ -17,17 +17,29 @@ aren't enough.
 ### Usage
 
 ```clojure
-(require '[schema-conformer.core :refer :all])
 
-(conform {:test #{s/Str}} {:test [:example]})
-=> {:test #{"example"}}
+(require '[schema-conformer.core :as scc]
+         '[clojure.pprint :as pprint]
+         '[schema.core :as s])
 
+(s/defschema TestSchema
+  {:set-of-strings                  #{s/Str}
+   :required-field                  [s/Keyword]
+   (s/optional-key :optional-field) (s/maybe s/Str)
+   :default-value-field             (scc/default s/Str "NOT_FOUND")
+   :enum-of-keywords                (s/enum :one :two)})
 
-; there's also a default schema type that you can use to 
-; set default values during the conforming process
+(def data
+  {:set-of-strings   [:example]
+   :enum-of-keywords "one"
+   :optional-field   nil})
 
-(conform {:test (default s/Keyword :bingo)} {})
-=> {:test :bingo}
+(pprint/pprint (scc/conform TestSchema data))
+
+{:set-of-strings      #{"example"},  ; converted vector to a set, converted keywords to strings
+ :required-field      [],            ; added missing required keys, set a missing required collection to empty
+ :default-value-field "NOT_FOUND",   ; added missing required key with the default value set by the schema
+ :enum-of-keywords    :one}          ; converted the string to a keyword because the enum used a keyword value
 
 ```
 
@@ -89,9 +101,16 @@ If mongodb is on your classpath:
 
 ___
 
+### Production Notes
+
+Be sure to create a conformer once for your schema and reuse it for each piece of data
+rather than calling conform each time (same as you would with Schema).
+
+---
+
 ### Alternatives
 
-- [Malli](https://github.com/metosin/malli) is a nicer data-driven alternative to prismatic/schema.
+- [Malli](https://github.com/metosin/malli) is a nicer data-driven alternative to Schema.
 
 ___
 
