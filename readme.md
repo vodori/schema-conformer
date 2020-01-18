@@ -3,7 +3,7 @@
 
 ### Problem
 
-We're users of prismatic/schema. Schema is expressive and useful but we always 
+We're users of [prismatic/schema](https://github.com/plumatic/schema). Schema is expressive and useful but we always 
 find ourselves using custom matchers in order to be liberal in what we accept 
 and conservative in what we send. The basic matchers built-in to prismatic/schema 
 aren't enough.
