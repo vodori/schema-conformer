@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/vodori/schema-conformer.svg?branch=master)](https://travis-ci.com/vodori/schema-conformer) [![Maven metadata URL](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/com/vodori/schema-conformer/maven-metadata.xml.svg)](https://mvnrepository.com/artifact/com.vodori/schema-conformer)
+[![Build Status](https://travis-ci.com/vodori/schema-conformer.svg?branch=master)](https://travis-ci.com/vodori/schema-conformer) [![Maven metadata URL](https://img.shields.io/maven-metadata/v/https/repo1.maven.org/maven2/com/vodori/schema-conformer/maven-metadata.xml.svg)](https://mvnrepository.com/artifact/com.vodori/schema-conformer)
 
 
 ### Problem
